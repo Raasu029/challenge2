@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>鍛冶ガチャ</title>
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: radial-gradient(circle, #2c2c2c, #0f0f0f);
+  color: #fff;
+  text-align: center;
+}
 
+h1 {
+  margin-top: 20px;
+  color: #ffb347;
+  text-shadow: 0 0 10px #ff7b00;
+}
+
+#game {
+  margin-top: 40px;
+}
+
+button {
+  padding: 15px 30px;
+  font-size: 18px;
+  background: linear-gradient(#ff7b00, #ff3c00);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 10px #ff7b00;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+#result {
+  margin-top: 30px;
+  font-size: 22px;
+  min-height: 60px;
+}
+
+.item {
+  margin-top: 20px;
+  font-size: 26px;
+}
+
+.common { color: #ccc; }
+.rare { color: #4fc3f7; }
+.epic { color: #ba68c8; }
+.legend { color: gold; text-shadow: 0 0 10px gold; }
+
+.spark {
+  animation: spark 0.5s ease;
+}
+
+@keyframes spark {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+
+<body>
+
+<h1>⚒️ 鍛冶ガチャ ⚒️</h1>
+
+<div id="game">
+  <button onclick="drawGacha()">鍛造する！</button>
+  <div id="result"></div>
+</div>
+
+<script>
+const items = [
+  { name: "鉄の剣", rarity: "common", rate: 50 },
+  { name: "鋼の槍", rarity: "common", rate: 25 },
+  { name: "ミスリルナイフ", rarity: "rare", rate: 15 },
+  { name: "炎のハンマー", rarity: "epic", rate: 8 },
+  { name: "竜殺しの大剣", rarity: "legend", rate: 2 }
+];
+
+function drawGacha() {
+  const resultDiv = document.getElementById("result");
+  resultDiv.innerHTML = "鍛造中...";
+  
+  setTimeout(() => {
+    let rand = Math.random() * 100;
+    let sum = 0;
+    let selected;
+
+    for (let item of items) {
+      sum += item.rate;
+      if (rand <= sum) {
+        selected = item;
+        break;
+      }
+    }
+
+    resultDiv.innerHTML = `
+      <div class="item ${selected.rarity} spark">
+        🔥 ${selected.name} 🔥
+      </div>
+      <div>${getRarityText(selected.rarity)}</div>
+    `;
+  }, 1000);
+}
+
+function getRarityText(rarity) {
+  switch (rarity) {
+    case "common": return "ノーマル";
+    case "rare": return "レア！";
+    case "epic": return "エピック！！";
+    case "legend": return "✨レジェンダリー！！！✨";
+  }
+}
+</script>
+
+</body>
+</html>
