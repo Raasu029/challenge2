@@ -2,120 +2,192 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>鍛冶ガチャ</title>
+<title>鍛冶ガチャRPG</title>
 <style>
 body {
   margin: 0;
   font-family: sans-serif;
   background: radial-gradient(circle, #2c2c2c, #0f0f0f);
-  color: #fff;
+  color: white;
   text-align: center;
 }
 
-h1 {
-  margin-top: 20px;
-  color: #ffb347;
-  text-shadow: 0 0 10px #ff7b00;
-}
-
-#game {
-  margin-top: 40px;
-}
-
 button {
-  padding: 15px 30px;
-  font-size: 18px;
-  background: linear-gradient(#ff7b00, #ff3c00);
+  margin: 5px;
+  padding: 10px;
+  background: #ff5a00;
   border: none;
-  border-radius: 10px;
   color: white;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 0 10px #ff7b00;
 }
 
-button:active {
-  transform: scale(0.95);
-}
-
-#result {
-  margin-top: 30px;
-  font-size: 22px;
-  min-height: 60px;
-}
-
-.item {
-  margin-top: 20px;
-  font-size: 26px;
+.selected {
+  background: gold !important;
+  color: black;
 }
 
 .common { color: #ccc; }
 .rare { color: #4fc3f7; }
 .epic { color: #ba68c8; }
-.legend { color: gold; text-shadow: 0 0 10px gold; }
+.legend { color: gold; }
 
-.spark {
-  animation: spark 0.5s ease;
-}
-
-@keyframes spark {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.4); }
-  100% { transform: scale(1); }
+canvas {
+  background: #111;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>⚒️ 鍛冶ガチャ ⚒️</h1>
+<h1>⚒️ 鍛冶ガチャRPG ⚔️</h1>
 
-<div id="game">
-  <button onclick="drawGacha()">鍛造する！</button>
-  <div id="result"></div>
-</div>
+<button onclick="drawGacha()">鍛造</button>
+<button onclick="synthesize()">合成</button>
+<button onclick="spawnEnemy()">敵出現</button>
+<button onclick="attack()">攻撃</button>
+
+<div id="result"></div>
+
+<h2>🎒 武器</h2>
+<div id="inventory"></div>
+
+<h2>👹 敵</h2>
+<div id="enemy"></div>
+
+<canvas id="canvas" width="200" height="200"></canvas>
 
 <script>
 const items = [
-  { name: "鉄の剣", rarity: "common", rate: 50 },
-  { name: "鋼の槍", rarity: "common", rate: 25 },
-  { name: "ミスリルナイフ", rarity: "rare", rate: 15 },
-  { name: "炎のハンマー", rarity: "epic", rate: 8 },
-  { name: "竜殺しの大剣", rarity: "legend", rate: 2 }
+  { name: "鉄の剣", rarity: "common", rate: 50, type: "sword" },
+  { name: "鋼の槍", rarity: "common", rate: 25, type: "spear" },
+  { name: "ミスリルナイフ", rarity: "rare", rate: 15, type: "dagger" },
+  { name: "炎のハンマー", rarity: "epic", rate: 8, type: "hammer" },
+  { name: "竜殺しの大剣", rarity: "legend", rate: 2, type: "greatsword" }
 ];
 
+let inventory = [];
+let selected = null;
+let enemy = null;
+
 function drawGacha() {
-  const resultDiv = document.getElementById("result");
-  resultDiv.innerHTML = "鍛造中...";
-  
-  setTimeout(() => {
-    let rand = Math.random() * 100;
-    let sum = 0;
-    let selected;
+  let rand = Math.random() * 100;
+  let sum = 0;
+  let item;
 
-    for (let item of items) {
-      sum += item.rate;
-      if (rand <= sum) {
-        selected = item;
-        break;
-      }
+  for (let i of items) {
+    sum += i.rate;
+    if (rand <= sum) {
+      item = {...i, level: 0};
+      break;
     }
+  }
 
-    resultDiv.innerHTML = `
-      <div class="item ${selected.rarity} spark">
-        🔥 ${selected.name} 🔥
-      </div>
-      <div>${getRarityText(selected.rarity)}</div>
-    `;
-  }, 1000);
+  inventory.push(item);
+  updateInventory();
+
+  log(`🔥 ${item.name} 入手`);
 }
 
-function getRarityText(rarity) {
-  switch (rarity) {
-    case "common": return "ノーマル";
-    case "rare": return "レア！";
-    case "epic": return "エピック！！";
-    case "legend": return "✨レジェンダリー！！！✨";
+function updateInventory() {
+  const div = document.getElementById("inventory");
+  div.innerHTML = "";
+
+  inventory.forEach((item, i) => {
+    let btn = document.createElement("button");
+    btn.textContent = `${item.name}+${item.level}`;
+    btn.className = item.rarity;
+
+    btn.onclick = () => {
+      selected = i;
+      drawWeapon(item);
+    };
+
+    div.appendChild(btn);
+  });
+}
+
+function synthesize() {
+  if (inventory.length < 2) return;
+
+  for (let i = 0; i < inventory.length; i++) {
+    for (let j = i + 1; j < inventory.length; j++) {
+      let a = inventory[i];
+      let b = inventory[j];
+
+      if (a.name === b.name && a.level === b.level) {
+        inventory.splice(j, 1);
+        inventory.splice(i, 1);
+
+        inventory.push({...a, level: a.level + 1});
+        updateInventory();
+
+        log("⚗️ 合成成功！");
+        return;
+      }
+    }
   }
+
+  log("❌ 合成できる組み合わせなし");
+}
+
+function spawnEnemy() {
+  enemy = {
+    name: ["スライム", "ゴーレム", "ドラゴン"][Math.floor(Math.random()*3)],
+    hp: Math.floor(Math.random()*50)+50
+  };
+  updateEnemy();
+}
+
+function updateEnemy() {
+  if (!enemy) return;
+  document.getElementById("enemy").innerHTML =
+    `${enemy.name} HP: ${enemy.hp}`;
+}
+
+function attack() {
+  if (selected === null || !enemy) {
+    log("武器か敵が未選択！");
+    return;
+  }
+
+  let weapon = inventory[selected];
+
+  let power = getPower(weapon);
+  enemy.hp -= power;
+
+  log(`⚔️ ${weapon.name}+${weapon.level} → ${power}ダメージ！`);
+
+  if (enemy.hp <= 0) {
+    log(`🏆 ${enemy.name}撃破！ ガチャチャンス！`);
+    enemy = null;
+    document.getElementById("enemy").innerHTML = "";
+  } else {
+    updateEnemy();
+  }
+}
+
+function getPower(w) {
+  let base = 5;
+  if (w.rarity === "rare") base = 10;
+  if (w.rarity === "epic") base = 20;
+  if (w.rarity === "legend") base = 40;
+
+  return base + w.level * 5;
+}
+
+function drawWeapon(item) {
+  const ctx = document.getElementById("canvas").getContext("2d");
+  ctx.clearRect(0,0,200,200);
+
+  ctx.fillStyle = item.rarity === "legend" ? "gold" : "#aaa";
+
+  ctx.fillRect(90, 30, 20 + item.level*3, 120);
+}
+
+function log(text) {
+  document.getElementById("result").innerHTML = text;
 }
 </script>
 
